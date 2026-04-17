@@ -9,29 +9,27 @@
 <body>
     <button id="themeToggle" class="theme-btn">🌙</button>
     
-    <div class="container">
-        <a href="index.html" class="back-link">← Retour</a>
-        
-        <h1>📊 Administration - Oujda</h1>
-        <p style="color: var(--primary);">⚠️ Page réservée à l'administration</p>
+    <div class="admin-tabs">
+    <button class="tab-btn active" data-tab="infirmiers">👨‍⚕️ Infirmiers validés</button>
+    <button class="tab-btn" data-tab="inscriptions">⏳ Inscriptions en attente</button>
+    <button class="tab-btn" data-tab="avis">⭐ Avis</button>
+</div>
 
-        <div class="admin-tabs">
-            <button class="tab-btn active" data-tab="infirmiers">👨‍⚕️ Infirmiers</button>
-            <button class="tab-btn" data-tab="avis">⭐ Avis</button>
-        </div>
+<div id="tab-infirmiers" class="tab-content active">
+    <h2>Infirmiers validés (Google Sheet)</h2>
+    <div id="adminInfirmiersList"></div>
+</div>
 
-        <div id="tab-infirmiers" class="tab-content active">
-            <h2>Gestion des infirmiers</h2>
-            <div id="adminInfirmiersList"></div>
-        </div>
+<div id="tab-inscriptions" class="tab-content">
+    <h2>📝 Nouvelles inscriptions à valider</h2>
+    <button class="btn-small btn-info" onclick="exporterPourGoogleSheet()" style="margin-bottom: 15px;">📋 Exporter tout vers Google Sheet</button>
+    <div id="adminInscriptionsList"></div>
+</div>
 
-        <div id="tab-avis" class="tab-content">
-            <h2>Modération des avis</h2>
-            <div id="adminAvisList"></div>
-        </div>
-    </div>
-
-    <div id="notification" class="notification"></div>
+<div id="tab-avis" class="tab-content">
+    <h2>Modération des avis</h2>
+    <div id="adminAvisList"></div>
+</div>
 
     <script src="script.js"></script>
 </body>
