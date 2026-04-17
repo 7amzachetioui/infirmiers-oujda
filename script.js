@@ -1,8 +1,72 @@
-// ========== LIEN GOOGLE SHEETS ==========
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1RAIjiJZPwHMNFjBillgBEnOK5nDXQT658V3vbBulamc/export?format=csv&gid=0';
-
-// ========== DONNÉES ==========
-let infirmiersData = [];
+// ========== LISTE DES INFIRMIERS (TU AJOUTES ICI MANUELLEMENT) ==========
+// 👇 C'est ici que tu ajoutes les infirmiers quand tu reçois leurs infos sur WhatsApp
+let infirmiersData = [
+    // Exemple d'infirmier (tu peux le modifier ou le supprimer)
+    {
+        id: '1',
+        nom: 'Karima Benjelloun',
+        telephone: '0612345678',
+        email: 'karima@email.com',
+        adresse: '15 Rue de la Liberté',
+        quartier: 'Al Qods',
+        ville: 'Oujda',
+        rayon: 5,
+        services: ['Pansement', 'Injection', 'Prise de sang'],
+        tarifs: '80-150 DH',
+        prixMin: 80,
+        prixMax: 150,
+        disponibilites: 'Lundi-Vendredi 9h-17h',
+        diplomes: 'DE Infirmier',
+        langues: 'Arabe, Français',
+        experience: 6,
+        photo: '',
+        dateInscription: '2024-01-15',
+        valide: true
+    },
+    {
+        id: '2',
+        nom: 'Youssef Alaoui',
+        telephone: '0698765432',
+        email: 'youssef@email.com',
+        adresse: '8 Avenue Mohammed V',
+        quartier: 'Oujda Centre',
+        ville: 'Oujda',
+        rayon: 8,
+        services: ['Vaccination', 'Sondage urinaire'],
+        tarifs: '120-200 DH',
+        prixMin: 120,
+        prixMax: 200,
+        disponibilites: 'Mardi-Samedi 10h-18h',
+        diplomes: 'DE Infirmier Urgences',
+        langues: 'Arabe, Français',
+        experience: 4,
+        photo: '',
+        dateInscription: '2024-01-20',
+        valide: true
+    }
+    {
+        id: '4',
+        nom: 'Ahmed Benali',
+        telephone: '0612345678',
+        email: 'ahmed@email.com',
+        adresse: '5 Rue des Oliviers',
+        quartier: 'Hay Salam',
+        ville: 'Oujda',
+        rayon: 6,
+        services: ['Pansement', 'Injection'],
+        tarifs: '100-180 DH',
+        prixMin: 100,
+        prixMax: 180,
+        disponibilites: 'Lundi-Vendredi 8h-18h',
+        diplomes: 'DE Infirmier',
+        langues: 'Arabe, Français',
+        experience: 3,
+        photo: '',
+        dateInscription: '2024-04-17',
+        valide: true
+    },
+    // 👆 AJOUTE LES NOUVEAUX INFIRMIERS ICI, AVANT CETTE LIGNE
+];
 
 // ========== NOTIFICATION ==========
 function showNotification(message, type = 'info', title = '') {
@@ -31,62 +95,9 @@ function getWhatsAppUrl(phone, message) {
     return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
 }
 
-// ========== CHARGEMENT GOOGLE SHEETS ==========
-async function loadInfirmiersFromSheet() {
-    try {
-        const response = await fetch(SHEET_URL);
-        const csvText = await response.text();
-        const rows = csvText.split('\n').filter(row => row.trim());
-        
-        if (rows.length < 2) return [];
-        
-        const infirmiers = [];
-        for (let i = 1; i < rows.length; i++) {
-            const values = rows[i].split(',');
-            if (values.length < 5) continue;
-            
-            const clean = (str) => str ? str.replace(/^"|"$/g, '').trim() : '';
-            const services = clean(values[8]) ? clean(values[8]).split(', ') : [];
-            const valide = clean(values[18]).toUpperCase() === 'TRUE';
-            
-            if (valide) {
-                infirmiers.push({
-                    id: clean(values[0]),
-                    nom: clean(values[1]),
-                    telephone: clean(values[2]),
-                    email: clean(values[3]),
-                    adresse: clean(values[4]),
-                    quartier: clean(values[5]),
-                    ville: clean(values[6]) || 'Oujda',
-                    rayon: parseInt(clean(values[7])) || 5,
-                    services: services,
-                    tarifs: clean(values[9]),
-                    prixMin: parseInt(clean(values[10])) || 0,
-                    prixMax: parseInt(clean(values[11])) || 200,
-                    disponibilites: clean(values[12]) || 'Lundi-Vendredi 9h-17h',
-                    diplomes: clean(values[13]),
-                    langues: clean(values[14]) || 'Arabe, Français',
-                    experience: parseInt(clean(values[15])) || 0,
-                    photo: clean(values[16]),
-                    dateInscription: clean(values[17]),
-                    valide: true
-                });
-            }
-        }
-        
-        infirmiersData = infirmiers;
-        console.log('✅ Infirmiers chargés:', infirmiersData.length);
-        return infirmiersData;
-    } catch (error) {
-        console.error('Erreur chargement:', error);
-        return [];
-    }
-}
-
 // ========== FONCTIONS ==========
 async function getInfirmiers() {
-    if (infirmiersData.length === 0) await loadInfirmiersFromSheet();
-    return infirmiersData;
+    return infirmiersData.filter(i => i.valide === true);
 }
 
 async function getStats() {
@@ -104,7 +115,6 @@ async function getStats() {
 
 // ========== INIT ==========
 async function init() {
-    await loadInfirmiersFromSheet();
     await updateStats();
     setupTheme();
 }
