@@ -3,7 +3,6 @@ const API_URL = 'https://api.sheetbest.com/sheets/3c2bfe43-ee74-460d-95fb-00de2f
 
 // ========== DONNÉES ==========
 let infirmiersData = [];
-let avisData = [];
 
 // ========== NOTIFICATION ==========
 function showNotification(message, type = 'info', title = '') {
@@ -47,7 +46,7 @@ async function loadInfirmiersFromAPI() {
             quartier: item.quartier || '',
             ville: item.ville || 'Oujda',
             rayon: parseInt(item.rayon) || 5,
-            services: item.services ? item.services.split(', ') : [],
+            services: item.services ? (typeof item.services === 'string' ? item.services.split(', ') : item.services) : [],
             tarifs: item.tarifs || '',
             prixMin: parseInt(item.prixMin) || 0,
             prixMax: parseInt(item.prixMax) || 200,
@@ -65,26 +64,11 @@ async function loadInfirmiersFromAPI() {
         return infirmiersData;
     } catch (error) {
         console.error('Erreur chargement:', error);
-        showNotification('Erreur de chargement des données', 'error');
         return [];
     }
 }
 
-// ========== FONCTIONS GLOBALES ==========
-async function getInfirmiers(onlyValides = true) {
-    if (infirmiersData.length === 0) await loadInfirmiersFromAPI();
-    if (onlyValides) return infirmiersData.filter(i => i.valide);
-    return infirmiersData;
-}
-
-async function getAvis(infirmierId = null, seulementApprouves = true) {
-    // Pour l'instant, pas d'avis dans l'API
-    let result = [];
-    if (seulementApprouves) result = result.filter(a => a.approuve);
-    if (infirmierId) result = result.filter(a => a.infirmierId === infirmierId);
-    return result;
-}
-
+// ========== AJOUTER INFIRMIER ==========
 async function ajouterInfirmier(infirmier) {
     try {
         // Nettoyer les données pour l'API
@@ -97,7 +81,7 @@ async function ajouterInfirmier(infirmier) {
             quartier: infirmier.quartier,
             ville: infirmier.ville,
             rayon: infirmier.rayon.toString(),
-            services: infirmier.services.join(', '),
+            services: Array.isArray(infirmier.services) ? infirmier.services.join(', ') : infirmier.services,
             tarifs: infirmier.tarifs,
             prixMin: infirmier.prixMin.toString(),
             prixMax: infirmier.prixMax.toString(),
@@ -110,28 +94,52 @@ async function ajouterInfirmier(infirmier) {
             valide: infirmier.valide ? 'TRUE' : 'FALSE'
         };
         
+        console.log('Envoi des données:', dataToSend);
+        
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(dataToSend)
         });
         
+        console.log('Réponse status:', response.status);
+        
         if (response.ok) {
+            const result = await response.json();
+            console.log('Succès:', result);
             await loadInfirmiersFromAPI(); // Recharger les données
             return true;
+        } else {
+            const errorText = await response.text();
+            console.error('Erreur réponse:', errorText);
+            return false;
         }
-        return false;
     } catch (error) {
         console.error('Erreur ajout:', error);
         return false;
     }
 }
 
+// ========== FONCTIONS GLOBALES ==========
+async function getInfirmiers(onlyValides = true) {
+    if (infirmiersData.length === 0) await loadInfirmiersFromAPI();
+    if (onlyValides) return infirmiersData.filter(i => i.valide);
+    return infirmiersData;
+}
+
 async function getStats() {
     const infirmiers = await getInfirmiers(false);
     const allServices = new Set();
     infirmiers.forEach(inf => {
-        if (inf.services) inf.services.forEach(s => allServices.add(s));
+        if (inf.services) {
+            if (Array.isArray(inf.services)) {
+                inf.services.forEach(s => allServices.add(s));
+            } else if (typeof inf.services === 'string') {
+                inf.services.split(', ').forEach(s => allServices.add(s));
+            }
+        }
     });
     return {
         nbInfirmiers: infirmiers.filter(i => i.valide).length,
@@ -179,6 +187,11 @@ if (document.getElementById('infirmierForm')) {
         const services = [];
         document.querySelectorAll('#servicesGroup input:checked').forEach(cb => services.push(cb.value));
         
+        if (services.length === 0) {
+            showNotification('Veuillez sélectionner au moins un service', 'error', '📋 Formulaire');
+            return;
+        }
+        
         const infirmier = {
             id: Date.now().toString(),
             nom: document.getElementById('nom').value,
@@ -201,20 +214,20 @@ if (document.getElementById('infirmierForm')) {
             valide: false
         };
         
+        showNotification('Envoi en cours...', 'info', '📝 Inscription');
+        
         const success = await ajouterInfirmier(infirmier);
         if (success) {
             showNotification('✅ Inscription enregistrée ! Un administrateur la validera bientôt.', 'success', '📝 Inscription');
             setTimeout(() => { window.location.href = 'index.html'; }, 2000);
         } else {
-            showNotification('Erreur lors de l\'inscription', 'error');
+            showNotification('Erreur lors de l\'inscription. Vérifie ta connexion.', 'error', '❌ Erreur');
         }
     });
 }
 
 // ========== PAGE RECHERCHE ==========
 if (document.getElementById('btnRechercher')) {
-    let currentResults = [];
-    
     async function rechercher() {
         let infirmiers = await getInfirmiers(true);
         
@@ -222,11 +235,10 @@ if (document.getElementById('btnRechercher')) {
         const quartierFiltre = document.getElementById('filtreQuartier').value;
         const prixMax = parseInt(document.getElementById('filtrePrixMax').value) || 999999;
         
-        if (serviceFiltre) infirmiers = infirmiers.filter(i => i.services.includes(serviceFiltre));
+        if (serviceFiltre) infirmiers = infirmiers.filter(i => i.services && i.services.includes(serviceFiltre));
         if (quartierFiltre) infirmiers = infirmiers.filter(i => i.quartier === quartierFiltre);
         infirmiers = infirmiers.filter(i => i.prixMax <= prixMax);
         
-        currentResults = infirmiers;
         document.getElementById('resultCount').textContent = infirmiers.length;
         await afficherResultats(infirmiers);
     }
@@ -242,6 +254,7 @@ if (document.getElementById('btnRechercher')) {
         
         container.innerHTML = infirmiers.map(inf => {
             const whatsappMsg = `Bonjour ${inf.nom}, je vous contacte depuis Infirmiers Oujda.`;
+            const servicesList = Array.isArray(inf.services) ? inf.services : (inf.services ? inf.services.split(', ') : []);
             
             return `
                 <div class="infirmier-card">
@@ -252,7 +265,7 @@ if (document.getElementById('btnRechercher')) {
                     <p>💰 ${inf.prixMin} - ${inf.prixMax} DH</p>
                     <p>🕒 ${inf.disponibilites}</p>
                     <p>🗣️ ${inf.langues}</p>
-                    <p>🩺 ${inf.services.map(s => `<span class="service-badge">${s}</span>`).join('')}</p>
+                    <p>🩺 ${servicesList.map(s => `<span class="service-badge">${s.trim()}</span>`).join('')}</p>
                     <div>
                         <a href="tel:${inf.telephone}" class="contact-btn">📞 Appeler</a>
                         <a href="${getWhatsAppUrl(inf.telephone, whatsappMsg)}" target="_blank" class="whatsapp-btn">💬 WhatsApp</a>
@@ -276,23 +289,27 @@ if (document.getElementById('tab-infirmiers')) {
         const infirmiers = await getInfirmiers(false);
         
         const container = document.getElementById('adminInfirmiersList');
-        container.innerHTML = infirmiers.map(inf => `
-            <div class="infirmier-card">
-                <h3>${inf.nom}</h3>
-                <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
-                <p>📍 ${inf.quartier}</p>
-                <p>🩺 ${inf.services ? inf.services.join(', ') : ''}</p>
-                <p>Statut: ${inf.valide ? '✅ Validé' : '⏳ En attente'}</p>
-            </div>
-        `).join('');
+        if (container) {
+            container.innerHTML = infirmiers.map(inf => `
+                <div class="infirmier-card">
+                    <h3>${inf.nom}</h3>
+                    <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
+                    <p>📍 ${inf.quartier}</p>
+                    <p>🩺 ${Array.isArray(inf.services) ? inf.services.join(', ') : inf.services}</p>
+                    <p>Statut: ${inf.valide ? '✅ Validé' : '⏳ En attente'}</p>
+                </div>
+            `).join('');
+        }
     }
     
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
         btn.onclick = () => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            tabBtns.forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            const tabId = document.getElementById(`tab-${btn.dataset.tab}`);
+            if (tabId) tabId.classList.add('active');
             if (btn.dataset.tab === 'infirmiers') loadAdminInfirmiers();
         };
     });
