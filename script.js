@@ -41,7 +41,28 @@ let infirmiersData = [
         photo: '',
         dateInscription: '2024-01-20',
         valide: true
-    }
+    },
+    {
+        id: '3',
+        nom: 'Fatima Zahraoui',
+        telephone: '0678901234',
+        email: 'fatima@email.com',
+        adresse: '3 Rue des Oliviers',
+        quartier: 'Hay Ennasr',
+        ville: 'Oujda',
+        rayon: 4,
+        services: ['Pansement', 'Surveillance tension'],
+        tarifs: '70-180 DH',
+        prixMin: 70,
+        prixMax: 180,
+        disponibilites: 'Lundi-Vendredi 8h-12h',
+        diplomes: 'DE Infirmier Diabétologie',
+        langues: 'Arabe, Français',
+        experience: 8,
+        photo: '',
+        dateInscription: '2024-04-17',
+        valide: true
+    },
 ];
 
 // ========== NOTIFICATION ==========
