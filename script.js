@@ -1,7 +1,5 @@
-// ========== LISTE DES INFIRMIERS (TU AJOUTES ICI MANUELLEMENT) ==========
-// 👇 C'est ici que tu ajoutes les infirmiers quand tu reçois leurs infos sur WhatsApp
+// ========== LISTE DES INFIRMIERS (AJOUTE ICI MANUELLEMENT) ==========
 let infirmiersData = [
-    // Exemple d'infirmier (tu peux le modifier ou le supprimer)
     {
         id: '1',
         nom: 'Karima Benjelloun',
@@ -44,28 +42,6 @@ let infirmiersData = [
         dateInscription: '2024-01-20',
         valide: true
     }
-    {
-        id: '4',
-        nom: 'Ahmed Benali',
-        telephone: '0612345678',
-        email: 'ahmed@email.com',
-        adresse: '5 Rue des Oliviers',
-        quartier: 'Hay Salam',
-        ville: 'Oujda',
-        rayon: 6,
-        services: ['Pansement', 'Injection'],
-        tarifs: '100-180 DH',
-        prixMin: 100,
-        prixMax: 180,
-        disponibilites: 'Lundi-Vendredi 8h-18h',
-        diplomes: 'DE Infirmier',
-        langues: 'Arabe, Français',
-        experience: 3,
-        photo: '',
-        dateInscription: '2024-04-17',
-        valide: true
-    },
-    // 👆 AJOUTE LES NOUVEAUX INFIRMIERS ICI, AVANT CETTE LIGNE
 ];
 
 // ========== NOTIFICATION ==========
