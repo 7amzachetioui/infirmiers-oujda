@@ -1,7 +1,8 @@
-// ========== LIEN API SHEET.BEST ==========
-const API_URL = 'https://api.sheetbest.com/sheets/3c2bfe43-ee74-460d-95fb-00de2f4292c4';
+// ========== LIEN GOOGLE SHEETS (LECTURE SEULEMENT) ==========
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1RAIjiJZPwHMNFjBillgBEnOK5nDXQT658V3vbBulamc/export?format=csv&gid=0';
 
-// ========== DONNÉES ==========
+// ========== STOCKAGE LOCAL DES INSCRIPTIONS EN ATTENTE ==========
+let inscriptionsEnAttente = [];
 let infirmiersData = [];
 
 // ========== NOTIFICATION ==========
@@ -31,33 +32,45 @@ function getWhatsAppUrl(phone, message) {
     return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
 }
 
-// ========== CHARGEMENT DEPUIS SHEET.BEST ==========
-async function loadInfirmiersFromAPI() {
+// ========== CHARGEMENT GOOGLE SHEETS (INFIRMIERS VALIDÉS) ==========
+async function loadInfirmiersFromSheet() {
     try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
+        const response = await fetch(SHEET_URL);
+        const csvText = await response.text();
+        const rows = csvText.split('\n').filter(row => row.trim());
         
-        const infirmiers = data.map(item => ({
-            id: item.id,
-            nom: item.nom,
-            telephone: item.telephone,
-            email: item.email,
-            adresse: item.adresse || '',
-            quartier: item.quartier || '',
-            ville: item.ville || 'Oujda',
-            rayon: parseInt(item.rayon) || 5,
-            services: item.services ? (typeof item.services === 'string' ? item.services.split(', ') : item.services) : [],
-            tarifs: item.tarifs || '',
-            prixMin: parseInt(item.prixMin) || 0,
-            prixMax: parseInt(item.prixMax) || 200,
-            disponibilites: item.disponibilites || 'Lundi-Vendredi 9h-17h',
-            diplomes: item.diplomes || '',
-            langues: item.langues || 'Arabe, Français',
-            experience: parseInt(item.experience) || 0,
-            photo: item.photo || '',
-            dateInscription: item.dateInscription || new Date().toISOString(),
-            valide: item.valide === 'TRUE' || item.valide === true
-        }));
+        if (rows.length < 2) return [];
+        
+        const infirmiers = [];
+        for (let i = 1; i < rows.length; i++) {
+            const values = rows[i].split(',');
+            if (values.length < 5) continue;
+            
+            const clean = (str) => str ? str.replace(/^"|"$/g, '').trim() : '';
+            const services = clean(values[8]) ? clean(values[8]).split(', ') : [];
+            
+            infirmiers.push({
+                id: clean(values[0]),
+                nom: clean(values[1]),
+                telephone: clean(values[2]),
+                email: clean(values[3]),
+                adresse: clean(values[4]),
+                quartier: clean(values[5]),
+                ville: clean(values[6]) || 'Oujda',
+                rayon: parseInt(clean(values[7])) || 5,
+                services: services,
+                tarifs: clean(values[9]),
+                prixMin: parseInt(clean(values[10])) || 0,
+                prixMax: parseInt(clean(values[11])) || 200,
+                disponibilites: clean(values[12]) || 'Lundi-Vendredi 9h-17h',
+                diplomes: clean(values[13]),
+                langues: clean(values[14]) || 'Arabe, Français',
+                experience: parseInt(clean(values[15])) || 0,
+                photo: clean(values[16]),
+                dateInscription: clean(values[17]),
+                valide: true
+            });
+        }
         
         infirmiersData = infirmiers;
         console.log('✅ Infirmiers chargés:', infirmiersData.length);
@@ -68,81 +81,90 @@ async function loadInfirmiersFromAPI() {
     }
 }
 
-// ========== AJOUTER INFIRMIER ==========
-async function ajouterInfirmier(infirmier) {
-    try {
-        // Nettoyer les données pour l'API
-        const dataToSend = {
-            id: infirmier.id,
-            nom: infirmier.nom,
-            telephone: infirmier.telephone,
-            email: infirmier.email,
-            adresse: infirmier.adresse,
-            quartier: infirmier.quartier,
-            ville: infirmier.ville,
-            rayon: infirmier.rayon.toString(),
-            services: Array.isArray(infirmier.services) ? infirmier.services.join(', ') : infirmier.services,
-            tarifs: infirmier.tarifs,
-            prixMin: infirmier.prixMin.toString(),
-            prixMax: infirmier.prixMax.toString(),
-            disponibilites: infirmier.disponibilites,
-            diplomes: infirmier.diplomes,
-            langues: infirmier.langues,
-            experience: infirmier.experience.toString(),
-            photo: infirmier.photo,
-            dateInscription: infirmier.dateInscription,
-            valide: infirmier.valide ? 'TRUE' : 'FALSE'
-        };
-        
-        console.log('Envoi des données:', dataToSend);
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dataToSend)
-        });
-        
-        console.log('Réponse status:', response.status);
-        
-        if (response.ok) {
-            const result = await response.json();
-            console.log('Succès:', result);
-            await loadInfirmiersFromAPI(); // Recharger les données
-            return true;
-        } else {
-            const errorText = await response.text();
-            console.error('Erreur réponse:', errorText);
-            return false;
-        }
-    } catch (error) {
-        console.error('Erreur ajout:', error);
-        return false;
+// ========== GESTION DES INSCRIPTIONS (localStorage) ==========
+function chargerInscriptions() {
+    const saved = localStorage.getItem('inscriptions_en_attente');
+    if (saved) {
+        inscriptionsEnAttente = JSON.parse(saved);
+    } else {
+        inscriptionsEnAttente = [];
     }
+    console.log('📋 Inscriptions en attente:', inscriptionsEnAttente.length);
 }
 
-// ========== FONCTIONS GLOBALES ==========
-async function getInfirmiers(onlyValides = true) {
-    if (infirmiersData.length === 0) await loadInfirmiersFromAPI();
-    if (onlyValides) return infirmiersData.filter(i => i.valide);
+function sauvegarderInscriptions() {
+    localStorage.setItem('inscriptions_en_attente', JSON.stringify(inscriptionsEnAttente));
+}
+
+async function ajouterInscription(infirmier) {
+    inscriptionsEnAttente.push(infirmier);
+    sauvegarderInscriptions();
+    console.log('➕ Nouvelle inscription:', infirmier.nom);
+}
+
+async function accepterInscription(index) {
+    const infirmier = inscriptionsEnAttente[index];
+    
+    // Créer le texte à copier dans Google Sheet
+    const nouvelleLigne = [
+        infirmier.id,
+        infirmier.nom,
+        infirmier.telephone,
+        infirmier.email,
+        infirmier.adresse,
+        infirmier.quartier,
+        infirmier.ville,
+        infirmier.rayon,
+        infirmier.services.join(', '),
+        infirmier.tarifs,
+        infirmier.prixMin,
+        infirmier.prixMax,
+        infirmier.disponibilites,
+        infirmier.diplomes,
+        infirmier.langues,
+        infirmier.experience,
+        infirmier.photo,
+        infirmier.dateInscription,
+        'TRUE'
+    ].join('\t'); // Tabulation pour coller facilement dans Google Sheet
+    
+    // Copier dans le presse-papier
+    await navigator.clipboard.writeText(nouvelleLigne);
+    
+    // Supprimer de la liste d'attente
+    inscriptionsEnAttente.splice(index, 1);
+    sauvegarderInscriptions();
+    
+    showNotification('✅ Infirmier accepté ! Donnée copiée. Colle-la dans ton Google Sheet (Ctrl+V)', 'success', '📋 Ajouté');
+    
+    // Recharger l'affichage admin
+    if (typeof loadAdminInfirmiers === 'function') loadAdminInfirmiers();
+    if (typeof loadAdminInscriptions === 'function') loadAdminInscriptions();
+}
+
+async function refuserInscription(index) {
+    const nom = inscriptionsEnAttente[index].nom;
+    inscriptionsEnAttente.splice(index, 1);
+    sauvegarderInscriptions();
+    showNotification(`❌ Inscription de ${nom} refusée et supprimée`, 'warning', 'Refusé');
+    
+    if (typeof loadAdminInscriptions === 'function') loadAdminInscriptions();
+}
+
+// ========== FONCTIONS POUR LE SITE PUBLIC ==========
+async function getInfirmiers() {
+    if (infirmiersData.length === 0) await loadInfirmiersFromSheet();
     return infirmiersData;
 }
 
 async function getStats() {
-    const infirmiers = await getInfirmiers(false);
+    const infirmiers = await getInfirmiers();
     const allServices = new Set();
     infirmiers.forEach(inf => {
-        if (inf.services) {
-            if (Array.isArray(inf.services)) {
-                inf.services.forEach(s => allServices.add(s));
-            } else if (typeof inf.services === 'string') {
-                inf.services.split(', ').forEach(s => allServices.add(s));
-            }
-        }
+        if (inf.services) inf.services.forEach(s => allServices.add(s));
     });
     return {
-        nbInfirmiers: infirmiers.filter(i => i.valide).length,
+        nbInfirmiers: infirmiers.length,
         nbServices: allServices.size,
         nbAvis: 0
     };
@@ -150,7 +172,8 @@ async function getStats() {
 
 // ========== INIT ==========
 async function init() {
-    await loadInfirmiersFromAPI();
+    chargerInscriptions();
+    await loadInfirmiersFromSheet();
     await updateStats();
     setupTheme();
 }
@@ -188,7 +211,7 @@ if (document.getElementById('infirmierForm')) {
         document.querySelectorAll('#servicesGroup input:checked').forEach(cb => services.push(cb.value));
         
         if (services.length === 0) {
-            showNotification('Veuillez sélectionner au moins un service', 'error', '📋 Formulaire');
+            showNotification('Veuillez sélectionner au moins un service', 'error');
             return;
         }
         
@@ -214,22 +237,16 @@ if (document.getElementById('infirmierForm')) {
             valide: false
         };
         
-        showNotification('Envoi en cours...', 'info', '📝 Inscription');
-        
-        const success = await ajouterInfirmier(infirmier);
-        if (success) {
-            showNotification('✅ Inscription enregistrée ! Un administrateur la validera bientôt.', 'success', '📝 Inscription');
-            setTimeout(() => { window.location.href = 'index.html'; }, 2000);
-        } else {
-            showNotification('Erreur lors de l\'inscription. Vérifie ta connexion.', 'error', '❌ Erreur');
-        }
+        await ajouterInscription(infirmier);
+        showNotification('✅ Votre inscription a été envoyée à l\'administrateur !', 'success', '📝 En attente');
+        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
     });
 }
 
 // ========== PAGE RECHERCHE ==========
 if (document.getElementById('btnRechercher')) {
     async function rechercher() {
-        let infirmiers = await getInfirmiers(true);
+        let infirmiers = await getInfirmiers();
         
         const serviceFiltre = document.getElementById('filtreService').value;
         const quartierFiltre = document.getElementById('filtreQuartier').value;
@@ -240,10 +257,10 @@ if (document.getElementById('btnRechercher')) {
         infirmiers = infirmiers.filter(i => i.prixMax <= prixMax);
         
         document.getElementById('resultCount').textContent = infirmiers.length;
-        await afficherResultats(infirmiers);
+        afficherResultats(infirmiers);
     }
     
-    async function afficherResultats(infirmiers) {
+    function afficherResultats(infirmiers) {
         const container = document.getElementById('listeInfirmiers');
         if (!container) return;
         
@@ -254,18 +271,17 @@ if (document.getElementById('btnRechercher')) {
         
         container.innerHTML = infirmiers.map(inf => {
             const whatsappMsg = `Bonjour ${inf.nom}, je vous contacte depuis Infirmiers Oujda.`;
-            const servicesList = Array.isArray(inf.services) ? inf.services : (inf.services ? inf.services.split(', ') : []);
             
             return `
                 <div class="infirmier-card">
                     <h3>${inf.nom}</h3>
-                    <div class="stars">⭐ Pas encore noté</div>
-                    <p>📍 ${inf.quartier}, ${inf.ville} (${inf.rayon} km)</p>
+                    <div class="stars">⭐ Infirmier diplômé</div>
+                    <p>📍 ${inf.quartier}, ${inf.ville} (rayon ${inf.rayon} km)</p>
                     <p>📞 ${formatPhoneNumber(inf.telephone)}</p>
                     <p>💰 ${inf.prixMin} - ${inf.prixMax} DH</p>
                     <p>🕒 ${inf.disponibilites}</p>
                     <p>🗣️ ${inf.langues}</p>
-                    <p>🩺 ${servicesList.map(s => `<span class="service-badge">${s.trim()}</span>`).join('')}</p>
+                    <p>🩺 ${inf.services.map(s => `<span class="service-badge">${s}</span>`).join('')}</p>
                     <div>
                         <a href="tel:${inf.telephone}" class="contact-btn">📞 Appeler</a>
                         <a href="${getWhatsAppUrl(inf.telephone, whatsappMsg)}" target="_blank" class="whatsapp-btn">💬 WhatsApp</a>
@@ -285,23 +301,68 @@ if (document.getElementById('btnRechercher')) {
 
 // ========== PAGE ADMIN ==========
 if (document.getElementById('tab-infirmiers')) {
-    async function loadAdminInfirmiers() {
-        const infirmiers = await getInfirmiers(false);
-        
+    
+    // Afficher les infirmiers déjà validés (depuis Google Sheet)
+    window.loadAdminInfirmiers = async function() {
+        const infirmiers = await getInfirmiers();
         const container = document.getElementById('adminInfirmiersList');
         if (container) {
             container.innerHTML = infirmiers.map(inf => `
                 <div class="infirmier-card">
-                    <h3>${inf.nom}</h3>
+                    <h3>✅ ${inf.nom}</h3>
                     <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
-                    <p>📍 ${inf.quartier}</p>
-                    <p>🩺 ${Array.isArray(inf.services) ? inf.services.join(', ') : inf.services}</p>
-                    <p>Statut: ${inf.valide ? '✅ Validé' : '⏳ En attente'}</p>
+                    <p>📍 ${inf.quartier} | ${inf.ville}</p>
+                    <p>🕒 ${inf.disponibilites}</p>
+                    <p>🩺 ${inf.services.join(', ')}</p>
                 </div>
             `).join('');
+            if (infirmiers.length === 0) {
+                container.innerHTML = '<div class="aucun-resultat">Aucun infirmier validé pour le moment</div>';
+            }
         }
-    }
+    };
     
+    // Afficher les inscriptions en attente
+    window.loadAdminInscriptions = function() {
+        const container = document.getElementById('adminInscriptionsList');
+        if (!container) return;
+        
+        chargerInscriptions();
+        
+        if (inscriptionsEnAttente.length === 0) {
+            container.innerHTML = '<div class="aucun-resultat">✅ Aucune inscription en attente</div>';
+            return;
+        }
+        
+        container.innerHTML = inscriptionsEnAttente.map((inf, index) => `
+            <div class="infirmier-card">
+                <h3>⏳ ${inf.nom}</h3>
+                <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
+                <p>📍 ${inf.quartier} | ${inf.ville}</p>
+                <p>🕒 ${inf.disponibilites}</p>
+                <p>🩺 ${inf.services.join(', ')}</p>
+                <p>📅 Inscription: ${new Date(inf.dateInscription).toLocaleDateString()}</p>
+                <div style="margin-top: 15px;">
+                    <button class="btn-small btn-primary" onclick="accepterInscription(${index})">✅ Accepter</button>
+                    <button class="btn-small btn-danger" onclick="refuserInscription(${index})">❌ Refuser</button>
+                </div>
+            </div>
+        `).join('');
+    };
+    
+    // Exporter les données pour Google Sheet (optionnel)
+    window.exporterPourGoogleSheet = function() {
+        let texte = "id\tnom\ttelephone\temail\tadresse\tquartier\tville\trayon\tservices\ttarifs\tprixMin\tprixMax\tdisponibilites\tdiplomes\tlangues\texperience\tphoto\tdateInscription\tvalide\n";
+        
+        inscriptionsEnAttente.forEach(inf => {
+            texte += `${inf.id}\t${inf.nom}\t${inf.telephone}\t${inf.email}\t${inf.adresse}\t${inf.quartier}\t${inf.ville}\t${inf.rayon}\t${inf.services.join(', ')}\t${inf.tarifs}\t${inf.prixMin}\t${inf.prixMax}\t${inf.disponibilites}\t${inf.diplomes}\t${inf.langues}\t${inf.experience}\t${inf.photo}\t${inf.dateInscription}\tFALSE\n`;
+        });
+        
+        navigator.clipboard.writeText(texte);
+        showNotification('Données copiées ! Colle-les dans Google Sheet (Ctrl+V)', 'success', '📋 Export');
+    };
+    
+    // Onglets admin
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
         btn.onclick = () => {
@@ -311,10 +372,12 @@ if (document.getElementById('tab-infirmiers')) {
             const tabId = document.getElementById(`tab-${btn.dataset.tab}`);
             if (tabId) tabId.classList.add('active');
             if (btn.dataset.tab === 'infirmiers') loadAdminInfirmiers();
+            if (btn.dataset.tab === 'inscriptions') loadAdminInscriptions();
         };
     });
     
     loadAdminInfirmiers();
+    loadAdminInscriptions();
 }
 
 // ========== DÉMARRAGE ==========
