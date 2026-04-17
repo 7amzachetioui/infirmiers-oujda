@@ -1,4 +1,4 @@
-// ========== LIENS GOOGLE SHEETS (TES LIENS CSV) ==========
+// ========== LIENS GOOGLE SHEETS (TES LIENS CSV CORRIGÉS) ==========
 const SHEET1_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb8by2RG1IGJ2D_3zYu7s6DH-iIjD1iOELdqCTN6NgXar3PaLrd7KEx0ijJ82avyK0wFoXsm0_459C/export?format=csv&gid=0';
 const SHEET2_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb8by2RG1IGJ2D_3zYu7s6DH-iIjD1iOELdqCTN6NgXar3PaLrd7KEx0ijJ82avyK0wFoXsm0_459C/export?format=csv&gid=1391565068';
 const SHEET3_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTb8by2RG1IGJ2D_3zYu7s6DH-iIjD1iOELdqCTN6NgXar3PaLrd7KEx0ijJ82avyK0wFoXsm0_459C/export?format=csv&gid=1213304758';
@@ -42,9 +42,7 @@ async function loadInfirmiersFromSheet() {
         const rows = csvText.split('\n').filter(row => row.trim());
         if (rows.length < 2) return [];
         
-        const headers = rows[0].split(',');
         const infirmiers = [];
-        
         for (let i = 1; i < rows.length; i++) {
             const values = rows[i].split(',');
             if (values.length < 5) continue;
@@ -78,7 +76,7 @@ async function loadInfirmiersFromSheet() {
         console.log('✅ Infirmiers chargés:', infirmiersData.length);
         return infirmiersData;
     } catch (error) {
-        console.error('Erreur chargement:', error);
+        console.error('Erreur chargement infirmiers:', error);
         return [];
     }
 }
@@ -206,7 +204,6 @@ if (document.getElementById('infirmierForm')) {
             valide: false
         };
         
-        // Stockage local
         let inscrits = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
         inscrits.push(infirmier);
         localStorage.setItem('inscriptions_temp', JSON.stringify(inscrits));
