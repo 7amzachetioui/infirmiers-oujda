@@ -63,6 +63,28 @@ let infirmiersData = [
         dateInscription: '2024-04-17',
         valide: true
     },
+    {
+        id: '4',
+        nom: 'hamza chetioui',
+        telephone: '0755020097',
+        email: 'hamzachetioui6@gmail.com',
+        adresse: 'lazaret',
+        quartier: 'lazaret',
+        ville: 'Oujda',
+        rayon: 5,
+        services: ['Pansement', 'injection' , 'Prise de sang' , 'vaccination' , 'sondage urinaire' ],
+        tarifs: '100-200 DH',
+        prixMin: 100,
+        prixMax: 200,
+        disponibilites: 'Lundi-Vendredi 9h-17h',
+        diplomes: 'DE Infirmier',
+        langues: 'Arabe, Français',
+        experience: 5,
+        photo: '',
+        dateInscription: '2024-04-17',
+        valide: true
+    },
+
 ];
 
 // ========== NOTIFICATION ==========
