@@ -1,7 +1,5 @@
-// ========== LIENS GOOGLE SHEETS (TES LIENS CSV CORRIGÉS) ==========
-const SHEET1_URL = 'https://docs.google.com/spreadsheets/d/1RAIjiJZPwHMNFjBillgBEnOK5nDXQT658V3vbBulamc/export?format=csv&gid=0';
-const SHEET2_URL = 'https://docs.google.com/spreadsheets/d/1RAIjiJZPwHMNFjBillgBEnOK5nDXQT658V3vbBulamc/export?format=csv&gid=1391565068';
-const SHEET3_URL = 'https://docs.google.com/spreadsheets/d/1RAIjiJZPwHMNFjBillgBEnOK5nDXQT658V3vbBulamc/export?format=csv&gid=1213304758';
+// ========== LIEN API SHEET.BEST ==========
+const API_URL = 'https://api.sheetbest.com/sheets/3c2bfe43-ee74-460d-95fb-00de2f4292c4';
 
 // ========== DONNÉES ==========
 let infirmiersData = [];
@@ -34,103 +32,103 @@ function getWhatsAppUrl(phone, message) {
     return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
 }
 
-// ========== CHARGEMENT GOOGLE SHEETS ==========
-async function loadInfirmiersFromSheet() {
+// ========== CHARGEMENT DEPUIS SHEET.BEST ==========
+async function loadInfirmiersFromAPI() {
     try {
-        const response = await fetch(SHEET1_URL);
-        const csvText = await response.text();
-        const rows = csvText.split('\n').filter(row => row.trim());
-        if (rows.length < 2) return [];
+        const response = await fetch(API_URL);
+        const data = await response.json();
         
-        const infirmiers = [];
-        for (let i = 1; i < rows.length; i++) {
-            const values = rows[i].split(',');
-            if (values.length < 5) continue;
-            
-            const services = values[8] ? values[8].split(', ') : [];
-            
-            infirmiers.push({
-                id: values[0],
-                nom: values[1],
-                telephone: values[2],
-                email: values[3],
-                adresse: values[4] || '',
-                quartier: values[5] || '',
-                ville: values[6] || 'Oujda',
-                rayon: parseInt(values[7]) || 5,
-                services: services,
-                tarifs: values[9] || '',
-                prixMin: parseInt(values[10]) || 0,
-                prixMax: parseInt(values[11]) || 200,
-                disponibilites: values[12] || 'Lundi-Vendredi 9h-17h',
-                diplomes: values[13] || '',
-                langues: values[14] || 'Arabe, Français',
-                experience: parseInt(values[15]) || 0,
-                photo: values[16] || '',
-                dateInscription: values[17] || new Date().toISOString(),
-                valide: values[18] === 'TRUE' || values[18] === 'true'
-            });
-        }
+        const infirmiers = data.map(item => ({
+            id: item.id,
+            nom: item.nom,
+            telephone: item.telephone,
+            email: item.email,
+            adresse: item.adresse || '',
+            quartier: item.quartier || '',
+            ville: item.ville || 'Oujda',
+            rayon: parseInt(item.rayon) || 5,
+            services: item.services ? item.services.split(', ') : [],
+            tarifs: item.tarifs || '',
+            prixMin: parseInt(item.prixMin) || 0,
+            prixMax: parseInt(item.prixMax) || 200,
+            disponibilites: item.disponibilites || 'Lundi-Vendredi 9h-17h',
+            diplomes: item.diplomes || '',
+            langues: item.langues || 'Arabe, Français',
+            experience: parseInt(item.experience) || 0,
+            photo: item.photo || '',
+            dateInscription: item.dateInscription || new Date().toISOString(),
+            valide: item.valide === 'TRUE' || item.valide === true
+        }));
         
         infirmiersData = infirmiers;
         console.log('✅ Infirmiers chargés:', infirmiersData.length);
         return infirmiersData;
     } catch (error) {
-        console.error('Erreur chargement infirmiers:', error);
-        return [];
-    }
-}
-
-async function loadAvisFromSheet() {
-    try {
-        const response = await fetch(SHEET2_URL);
-        const csvText = await response.text();
-        const rows = csvText.split('\n').filter(row => row.trim());
-        if (rows.length < 2) return [];
-        
-        const avis = [];
-        for (let i = 1; i < rows.length; i++) {
-            const values = rows[i].split(',');
-            if (values.length < 4) continue;
-            
-            avis.push({
-                id: values[0],
-                infirmierId: values[1],
-                infirmierNom: values[2],
-                note: parseInt(values[3]) || 0,
-                commentaire: values[4] || '',
-                date: values[5] || new Date().toISOString(),
-                approuve: values[6] === 'TRUE' || values[6] === 'true'
-            });
-        }
-        
-        avisData = avis;
-        console.log('✅ Avis chargés:', avisData.length);
-        return avisData;
-    } catch (error) {
-        console.error('Erreur chargement avis:', error);
+        console.error('Erreur chargement:', error);
+        showNotification('Erreur de chargement des données', 'error');
         return [];
     }
 }
 
 // ========== FONCTIONS GLOBALES ==========
 async function getInfirmiers(onlyValides = true) {
-    if (infirmiersData.length === 0) await loadInfirmiersFromSheet();
+    if (infirmiersData.length === 0) await loadInfirmiersFromAPI();
     if (onlyValides) return infirmiersData.filter(i => i.valide);
     return infirmiersData;
 }
 
 async function getAvis(infirmierId = null, seulementApprouves = true) {
-    if (avisData.length === 0) await loadAvisFromSheet();
-    let result = [...avisData];
+    // Pour l'instant, pas d'avis dans l'API
+    let result = [];
     if (seulementApprouves) result = result.filter(a => a.approuve);
     if (infirmierId) result = result.filter(a => a.infirmierId === infirmierId);
     return result;
 }
 
+async function ajouterInfirmier(infirmier) {
+    try {
+        // Nettoyer les données pour l'API
+        const dataToSend = {
+            id: infirmier.id,
+            nom: infirmier.nom,
+            telephone: infirmier.telephone,
+            email: infirmier.email,
+            adresse: infirmier.adresse,
+            quartier: infirmier.quartier,
+            ville: infirmier.ville,
+            rayon: infirmier.rayon.toString(),
+            services: infirmier.services.join(', '),
+            tarifs: infirmier.tarifs,
+            prixMin: infirmier.prixMin.toString(),
+            prixMax: infirmier.prixMax.toString(),
+            disponibilites: infirmier.disponibilites,
+            diplomes: infirmier.diplomes,
+            langues: infirmier.langues,
+            experience: infirmier.experience.toString(),
+            photo: infirmier.photo,
+            dateInscription: infirmier.dateInscription,
+            valide: infirmier.valide ? 'TRUE' : 'FALSE'
+        };
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSend)
+        });
+        
+        if (response.ok) {
+            await loadInfirmiersFromAPI(); // Recharger les données
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Erreur ajout:', error);
+        return false;
+    }
+}
+
 async function getStats() {
     const infirmiers = await getInfirmiers(false);
-    const avis = await getAvis(null, true);
     const allServices = new Set();
     infirmiers.forEach(inf => {
         if (inf.services) inf.services.forEach(s => allServices.add(s));
@@ -138,14 +136,13 @@ async function getStats() {
     return {
         nbInfirmiers: infirmiers.filter(i => i.valide).length,
         nbServices: allServices.size,
-        nbAvis: avis.length
+        nbAvis: 0
     };
 }
 
 // ========== INIT ==========
 async function init() {
-    await loadInfirmiersFromSheet();
-    await loadAvisFromSheet();
+    await loadInfirmiersFromAPI();
     await updateStats();
     setupTheme();
 }
@@ -204,12 +201,13 @@ if (document.getElementById('infirmierForm')) {
             valide: false
         };
         
-        let inscrits = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-        inscrits.push(infirmier);
-        localStorage.setItem('inscriptions_temp', JSON.stringify(inscrits));
-        
-        showNotification('✅ Inscription enregistrée ! Un administrateur la validera bientôt.', 'success', '📝 Inscription');
-        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+        const success = await ajouterInfirmier(infirmier);
+        if (success) {
+            showNotification('✅ Inscription enregistrée ! Un administrateur la validera bientôt.', 'success', '📝 Inscription');
+            setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+        } else {
+            showNotification('Erreur lors de l\'inscription', 'error');
+        }
     });
 }
 
@@ -242,17 +240,13 @@ if (document.getElementById('btnRechercher')) {
             return;
         }
         
-        const avis = await getAvis(null, true);
-        
         container.innerHTML = infirmiers.map(inf => {
-            const infAvis = avis.filter(a => a.infirmierId === inf.id);
-            const avgNote = infAvis.length ? (infAvis.reduce((s,a)=>s+a.note,0)/infAvis.length).toFixed(1) : 0;
             const whatsappMsg = `Bonjour ${inf.nom}, je vous contacte depuis Infirmiers Oujda.`;
             
             return `
                 <div class="infirmier-card">
                     <h3>${inf.nom}</h3>
-                    <div class="stars">${'⭐'.repeat(Math.floor(avgNote))} ${avgNote > 0 ? `(${avgNote}/5)` : '⭐ Pas encore noté'}</div>
+                    <div class="stars">⭐ Pas encore noté</div>
                     <p>📍 ${inf.quartier}, ${inf.ville} (${inf.rayon} km)</p>
                     <p>📞 ${formatPhoneNumber(inf.telephone)}</p>
                     <p>💰 ${inf.prixMin} - ${inf.prixMax} DH</p>
@@ -262,34 +256,10 @@ if (document.getElementById('btnRechercher')) {
                     <div>
                         <a href="tel:${inf.telephone}" class="contact-btn">📞 Appeler</a>
                         <a href="${getWhatsAppUrl(inf.telephone, whatsappMsg)}" target="_blank" class="whatsapp-btn">💬 WhatsApp</a>
-                        <button class="avis-btn" data-id="${inf.id}" data-nom="${inf.nom}">⭐ Noter</button>
                     </div>
                 </div>
             `;
         }).join('');
-        
-        document.querySelectorAll('.avis-btn').forEach(btn => {
-            btn.onclick = async () => {
-                const note = prompt('Note sur 5 (1-5) :');
-                if (note && note >= 1 && note <= 5) {
-                    const commentaire = prompt('Votre commentaire :');
-                    const newAvis = {
-                        id: Date.now().toString(),
-                        infirmierId: btn.dataset.id,
-                        infirmierNom: btn.dataset.nom,
-                        note: parseInt(note),
-                        commentaire: commentaire || '',
-                        date: new Date().toISOString(),
-                        approuve: false
-                    };
-                    let avisExistants = JSON.parse(localStorage.getItem('avis_temp') || '[]');
-                    avisExistants.push(newAvis);
-                    localStorage.setItem('avis_temp', JSON.stringify(avisExistants));
-                    showNotification('⭐ Merci pour votre avis !', 'success', 'Avis envoyé');
-                    rechercher();
-                }
-            };
-        });
     }
     
     document.getElementById('btnRechercher').onclick = rechercher;
@@ -304,79 +274,18 @@ if (document.getElementById('btnRechercher')) {
 if (document.getElementById('tab-infirmiers')) {
     async function loadAdminInfirmiers() {
         const infirmiers = await getInfirmiers(false);
-        const inscriptionsTemp = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-        const tousInfirmiers = [...infirmiers, ...inscriptionsTemp];
         
         const container = document.getElementById('adminInfirmiersList');
-        container.innerHTML = tousInfirmiers.map(inf => `
+        container.innerHTML = infirmiers.map(inf => `
             <div class="infirmier-card">
                 <h3>${inf.nom}</h3>
                 <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
                 <p>📍 ${inf.quartier}</p>
                 <p>🩺 ${inf.services ? inf.services.join(', ') : ''}</p>
                 <p>Statut: ${inf.valide ? '✅ Validé' : '⏳ En attente'}</p>
-                ${!inf.valide ? `<button class="btn-small btn-primary" onclick="validerLocal('${inf.id}')">Valider</button>` : ''}
-                <button class="btn-small btn-danger" onclick="supprimerLocal('${inf.id}')">Supprimer</button>
             </div>
         `).join('');
     }
-    
-    window.validerLocal = (id) => {
-        let inscriptions = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-        const index = inscriptions.findIndex(i => i.id === id);
-        if (index !== -1) {
-            inscriptions[index].valide = true;
-            localStorage.setItem('inscriptions_temp', JSON.stringify(inscriptions));
-            loadAdminInfirmiers();
-            showNotification('Infirmier validé', 'success');
-        }
-    };
-    
-    window.supprimerLocal = (id) => {
-        if (confirm('Supprimer ?')) {
-            let inscriptions = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-            inscriptions = inscriptions.filter(i => i.id !== id);
-            localStorage.setItem('inscriptions_temp', JSON.stringify(inscriptions));
-            loadAdminInfirmiers();
-            showNotification('Infirmier supprimé', 'info');
-        }
-    };
-    
-    async function loadAdminAvis() {
-        const avisSheet = await getAvis(null, false);
-        const avisTemp = JSON.parse(localStorage.getItem('avis_temp') || '[]');
-        const tousAvis = [...avisSheet, ...avisTemp];
-        
-        const container = document.getElementById('adminAvisList');
-        container.innerHTML = tousAvis.map(a => `
-            <div class="infirmier-card">
-                <p><strong>${a.infirmierNom}</strong> - Note: ${'⭐'.repeat(a.note)} (${a.note}/5)</p>
-                <p>Commentaire: "${a.commentaire}"</p>
-                <p>Statut: ${a.approuve ? '✅ Approuvé' : '⏳ En attente'}</p>
-                ${!a.approuve ? `<button class="btn-small btn-primary" onclick="approuverAvisLocal('${a.id}')">Approuver</button>` : ''}
-                <button class="btn-small btn-danger" onclick="supprimerAvisLocal('${a.id}')">Supprimer</button>
-            </div>
-        `).join('');
-    }
-    
-    window.approuverAvisLocal = (id) => {
-        let avis = JSON.parse(localStorage.getItem('avis_temp') || '[]');
-        const index = avis.findIndex(a => a.id === id);
-        if (index !== -1) {
-            avis[index].approuve = true;
-            localStorage.setItem('avis_temp', JSON.stringify(avis));
-            loadAdminAvis();
-            showNotification('Avis approuvé', 'success');
-        }
-    };
-    
-    window.supprimerAvisLocal = (id) => {
-        let avis = JSON.parse(localStorage.getItem('avis_temp') || '[]');
-        avis = avis.filter(a => a.id !== id);
-        localStorage.setItem('avis_temp', JSON.stringify(avis));
-        loadAdminAvis();
-        showNotification('Avis supprimé', 'info');
-    };
     
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
@@ -385,7 +294,6 @@ if (document.getElementById('tab-infirmiers')) {
             btn.classList.add('active');
             document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
             if (btn.dataset.tab === 'infirmiers') loadAdminInfirmiers();
-            if (btn.dataset.tab === 'avis') loadAdminAvis();
         };
     });
     
