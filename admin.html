@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Oujda</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button id="themeToggle" class="theme-btn">🌙</button>
+    
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour</a>
+        
+        <h1>📊 Administration - Oujda</h1>
+        <p style="color: var(--primary);">⚠️ Page réservée à l'administration</p>
+
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-tab="infirmiers">👨‍⚕️ Infirmiers</button>
+            <button class="tab-btn" data-tab="avis">⭐ Avis</button>
+        </div>
+
+        <div id="tab-infirmiers" class="tab-content active">
+            <h2>Gestion des infirmiers</h2>
+            <div id="adminInfirmiersList"></div>
+        </div>
+
+        <div id="tab-avis" class="tab-content">
+            <h2>Modération des avis</h2>
+            <div id="adminAvisList"></div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

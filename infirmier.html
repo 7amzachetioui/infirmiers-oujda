@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription Infirmier - Oujda</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button id="themeToggle" class="theme-btn">🌙</button>
+    
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour à l'accueil</a>
+        
+        <h1>📝 Inscription infirmier - Oujda</h1>
+        <p>Remplissez ce formulaire pour apparaître dans l'annuaire</p>
+
+        <form id="infirmierForm">
+            <div class="form-group">
+                <label>Photo de profil</label>
+                <input type="file" id="photoUpload" accept="image/*">
+                <div id="photoPreview"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Nom complet *</label>
+                <input type="text" id="nom" required>
+            </div>
+
+            <div class="form-group">
+                <label>Téléphone *</label>
+                <input type="tel" id="telephone" required pattern="[0-9]{10}">
+                <small>06XXXXXXXX</small>
+            </div>
+
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="email" required>
+            </div>
+
+            <div class="form-group">
+                <label>Adresse *</label>
+                <input type="text" id="adresse" required>
+            </div>
+
+            <div class="form-group">
+                <label>Quartier *</label>
+                <select id="quartier" required>
+                    <option value="">Sélectionnez</option>
+                    <option value="Al Qods">Al Qods</option>
+                    <option value="Oujda Centre">Oujda Centre</option>
+                    <option value="Hay Ennasr">Hay Ennasr</option>
+                    <option value="Hay Al Fath">Hay Al Fath</option>
+                    <option value="Hay Salam">Hay Salam</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Rayon (km) *</label>
+                <input type="number" id="rayon" required min="1" max="30" value="5">
+            </div>
+
+            <div class="form-group">
+                <label>Services proposés *</label>
+                <div class="checkbox-group" id="servicesGroup">
+                    <label><input type="checkbox" value="Pansement"> Pansement</label>
+                    <label><input type="checkbox" value="Injection"> Injection</label>
+                    <label><input type="checkbox" value="Prise de sang"> Prise de sang</label>
+                    <label><input type="checkbox" value="Vaccination"> Vaccination</label>
+                    <label><input type="checkbox" value="Sondage"> Sondage</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tarifs (DH) *</label>
+                <input type="text" id="tarifs" required placeholder="ex: 80-150 DH">
+            </div>
+
+            <div class="form-group">
+                <label>Prix min (DH)</label>
+                <input type="number" id="prixMin" step="10">
+            </div>
+
+            <div class="form-group">
+                <label>Prix max (DH)</label>
+                <input type="number" id="prixMax" step="10">
+            </div>
+
+            <div class="form-group">
+                <label>Disponibilités</label>
+                <input type="text" id="disponibilites" placeholder="ex: Lundi-Vendredi 9h-17h">
+            </div>
+
+            <div class="form-group">
+                <label>Années d'expérience</label>
+                <input type="number" id="experience" min="0" value="0">
+            </div>
+
+            <div class="form-group">
+                <label>Langues parlées</label>
+                <input type="text" id="langues" placeholder="Arabe, Français">
+            </div>
+
+            <button type="submit" class="btn btn-primary">S'inscrire</button>
+        </form>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

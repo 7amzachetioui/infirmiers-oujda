@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rechercher un infirmier - Oujda</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button id="themeToggle" class="theme-btn">🌙</button>
+    
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour à l'accueil</a>
+        
+        <h1>🔍 Rechercher un infirmier - Oujda</h1>
+
+        <div class="search-filters">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label>Service</label>
+                    <select id="filtreService">
+                        <option value="">Tous</option>
+                        <option value="Pansement">Pansement</option>
+                        <option value="Injection">Injection</option>
+                        <option value="Prise de sang">Prise de sang</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Sondage">Sondage</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Quartier</label>
+                    <select id="filtreQuartier">
+                        <option value="">Tous</option>
+                        <option value="Al Qods">Al Qods</option>
+                        <option value="Oujda Centre">Oujda Centre</option>
+                        <option value="Hay Ennasr">Hay Ennasr</option>
+                        <option value="Hay Al Fath">Hay Al Fath</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Prix max (DH)</label>
+                    <input type="number" id="filtrePrixMax" placeholder="200">
+                </div>
+            </div>
+
+            <div class="search-actions">
+                <button id="btnRechercher" class="btn btn-primary">🔍 Rechercher</button>
+                <button id="btnReset" class="btn btn-secondary">🔄 Réinitialiser</button>
+            </div>
+        </div>
+
+        <div id="resultats">
+            <h2>📋 Infirmiers disponibles (<span id="resultCount">0</span>)</h2>
+            <div id="listeInfirmiers" class="infirmiers-list"></div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

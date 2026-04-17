@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infirmiers à Domicile - Oujda</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button id="themeToggle" class="theme-btn">🌙</button>
+    
+    <div class="container">
+        <h1>🏥 Infirmiers à Domicile - Oujda</h1>
+        <p class="subtitle">Trouvez un infirmier près de chez vous ou inscrivez-vous</p>
+
+        <div class="stats-container" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-number" id="statInfirmiers">0</div>
+                <div class="stat-label">Infirmiers inscrits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statServices">0</div>
+                <div class="stat-label">Services différents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statAvis">0</div>
+                <div class="stat-label">Avis postés</div>
+            </div>
+        </div>
+
+        <div class="choice-cards">
+            <div class="card">
+                <div class="card-icon">👨‍⚕️</div>
+                <h2>Je suis infirmier</h2>
+                <p>Inscrivez-vous pour proposer vos services à domicile</p>
+                <a href="infirmier.html" class="btn btn-primary">S'inscrire</a>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">👤</div>
+                <h2>Je suis patient</h2>
+                <p>Recherchez un infirmier disponible près de chez vous</p>
+                <a href="recherche.html" class="btn btn-secondary">Rechercher</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
