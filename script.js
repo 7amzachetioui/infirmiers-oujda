@@ -1,13 +1,8 @@
 // ========== LIEN GOOGLE SHEETS ==========
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1RAIjiJZPwHMNFjBillgBEnOK5nDXQT658V3vbBulamc/export?format=csv&gid=0';
 
-// ========== STOCKAGE LOCAL ==========
-let inscriptionsEnAttente = [];
+// ========== DONNÉES ==========
 let infirmiersData = [];
-
-// ========== NUMÉRO WHATSAPP ADMIN ==========
-// Ton numéro : 0755020097 → format international : 212755020097
-const ADMIN_WHATSAPP = '212755020097';
 
 // ========== NOTIFICATION ==========
 function showNotification(message, type = 'info', title = '') {
@@ -18,7 +13,7 @@ function showNotification(message, type = 'info', title = '') {
     notification.className = `notification ${type}`;
     notification.innerHTML = `<strong>${title || titles[type]}</strong><br>${message}`;
     notification.style.display = 'block';
-    setTimeout(() => { notification.style.display = 'none'; }, 5000);
+    setTimeout(() => { notification.style.display = 'none'; }, 4000);
 }
 
 // ========== FORMATAGE ==========
@@ -34,43 +29,6 @@ function getWhatsAppUrl(phone, message) {
     if (cleaned.startsWith('0')) cleaned = '212' + cleaned.substring(1);
     if (!cleaned.startsWith('212')) cleaned = '212' + cleaned;
     return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
-}
-
-// ========== ENVOI WHATSAPP À L'ADMIN (VERSION FIABLE) ==========
-function envoyerNotificationAdmin(infirmier) {
-    // Message à envoyer
-    const message = 
-        `📋 NOUVELLE INSCRIPTION INFIRMIER 📋\n\n` +
-        `👤 Nom: ${infirmier.nom}\n` +
-        `📞 Téléphone: ${infirmier.telephone}\n` +
-        `📧 Email: ${infirmier.email}\n` +
-        `📍 Adresse: ${infirmier.adresse}\n` +
-        `🏘️ Quartier: ${infirmier.quartier}\n` +
-        `📍 Ville: ${infirmier.ville}\n` +
-        `📏 Rayon: ${infirmier.rayon} km\n` +
-        `🩺 Services: ${infirmier.services.join(', ')}\n` +
-        `💰 Tarifs: ${infirmier.tarifs}\n` +
-        `💶 Prix min: ${infirmier.prixMin} DH\n` +
-        `💶 Prix max: ${infirmier.prixMax} DH\n` +
-        `⏰ Disponibilités: ${infirmier.disponibilites}\n` +
-        `🗣️ Langues: ${infirmier.langues}\n` +
-        `🎓 Expérience: ${infirmier.experience} ans\n` +
-        `📅 Date inscription: ${new Date(infirmier.dateInscription).toLocaleString()}\n\n` +
-        `➡️ Ligne à copier dans Google Sheet (valide = FALSE):\n` +
-        `${infirmier.id}\t${infirmier.nom}\t${infirmier.telephone}\t${infirmier.email}\t${infirmier.adresse}\t${infirmier.quartier}\t${infirmier.ville}\t${infirmier.rayon}\t${infirmier.services.join(', ')}\t${infirmier.tarifs}\t${infirmier.prixMin}\t${infirmier.prixMax}\t${infirmier.disponibilites}\t\t${infirmier.langues}\t${infirmier.experience}\t\t${infirmier.dateInscription}\tFALSE`;
-    
-    // Copier dans le presse-papier
-    navigator.clipboard.writeText(message).then(() => {
-        showNotification('✅ Message copié ! Ouvre WhatsApp et colle-le (Ctrl+V)', 'success', '📋 Copié');
-        
-        // Ouvrir WhatsApp
-        window.open(`https://wa.me/${ADMIN_WHATSAPP}`, '_blank');
-    }).catch(() => {
-        // Si la copie échoue, ouvrir WhatsApp avec un message simple
-        const simpleMsg = `📋 Nouvelle inscription: ${infirmier.nom} - ${infirmier.telephone}`;
-        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(simpleMsg)}`, '_blank');
-        showNotification('Ouvre WhatsApp manuellement', 'info', '📱 WhatsApp');
-    });
 }
 
 // ========== CHARGEMENT GOOGLE SHEETS ==========
@@ -89,8 +47,6 @@ async function loadInfirmiersFromSheet() {
             
             const clean = (str) => str ? str.replace(/^"|"$/g, '').trim() : '';
             const services = clean(values[8]) ? clean(values[8]).split(', ') : [];
-            
-            // Ne garder que ceux avec valide = TRUE
             const valide = clean(values[18]).toUpperCase() === 'TRUE';
             
             if (valide) {
@@ -127,7 +83,7 @@ async function loadInfirmiersFromSheet() {
     }
 }
 
-// ========== FONCTIONS POUR LE SITE ==========
+// ========== FONCTIONS ==========
 async function getInfirmiers() {
     if (infirmiersData.length === 0) await loadInfirmiersFromSheet();
     return infirmiersData;
@@ -176,71 +132,21 @@ function setupTheme() {
     }
 }
 
-// ========== PAGE INSCRIPTION ==========
-if (document.getElementById('infirmierForm')) {
-    const form = document.getElementById('infirmierForm');
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const services = [];
-        document.querySelectorAll('#servicesGroup input:checked').forEach(cb => services.push(cb.value));
-        
-        if (services.length === 0) {
-            showNotification('Veuillez sélectionner au moins un service', 'error');
-            return;
-        }
-        
-        const infirmier = {
-            id: Date.now().toString(),
-            nom: document.getElementById('nom').value,
-            telephone: document.getElementById('telephone').value,
-            email: document.getElementById('email').value,
-            adresse: document.getElementById('adresse').value,
-            quartier: document.getElementById('quartier').value,
-            ville: 'Oujda',
-            rayon: parseInt(document.getElementById('rayon').value),
-            services: services,
-            tarifs: document.getElementById('tarifs').value,
-            prixMin: parseInt(document.getElementById('prixMin').value) || 0,
-            prixMax: parseInt(document.getElementById('prixMax').value) || 200,
-            disponibilites: document.getElementById('disponibilites').value || 'Lundi-Vendredi 9h-17h',
-            diplomes: '',
-            langues: document.getElementById('langues').value || 'Arabe, Français',
-            experience: parseInt(document.getElementById('experience').value) || 0,
-            photo: '',
-            dateInscription: new Date().toISOString(),
-            valide: false
-        };
-        
-        // Sauvegarder dans localStorage
-        let inscrits = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-        inscrits.push(infirmier);
-        localStorage.setItem('inscriptions_temp', JSON.stringify(inscrits));
-        
-        // Envoyer notification à l'admin
-        envoyerNotificationAdmin(infirmier);
-        
-        showNotification('✅ Inscription envoyée ! Vous serez contacté sous 48h.', 'success', '📝 Demande envoyée');
-        
-        // Rediriger après 3 secondes
-        setTimeout(() => { window.location.href = 'index.html'; }, 3000);
-    });
-}
-
 // ========== PAGE RECHERCHE ==========
 if (document.getElementById('btnRechercher')) {
     async function rechercher() {
         let infirmiers = await getInfirmiers();
         
-        const serviceFiltre = document.getElementById('filtreService').value;
-        const quartierFiltre = document.getElementById('filtreQuartier').value;
-        const prixMax = parseInt(document.getElementById('filtrePrixMax').value) || 999999;
+        const serviceFiltre = document.getElementById('filtreService')?.value || '';
+        const quartierFiltre = document.getElementById('filtreQuartier')?.value || '';
+        const prixMax = parseInt(document.getElementById('filtrePrixMax')?.value) || 999999;
         
         if (serviceFiltre) infirmiers = infirmiers.filter(i => i.services && i.services.includes(serviceFiltre));
         if (quartierFiltre) infirmiers = infirmiers.filter(i => i.quartier === quartierFiltre);
         infirmiers = infirmiers.filter(i => i.prixMax <= prixMax);
         
-        document.getElementById('resultCount').textContent = infirmiers.length;
+        const resultCount = document.getElementById('resultCount');
+        if (resultCount) resultCount.textContent = infirmiers.length;
         afficherResultats(infirmiers);
     }
     
@@ -276,102 +182,20 @@ if (document.getElementById('btnRechercher')) {
         }).join('');
     }
     
-    document.getElementById('btnRechercher').onclick = rechercher;
-    document.getElementById('btnReset').onclick = () => {
-        document.querySelectorAll('.filters-grid select, .filters-grid input').forEach(el => el.value = '');
-        rechercher();
-        showNotification('Filtres réinitialisés', 'info');
-    };
-    rechercher();
-}
-
-// ========== PAGE ADMIN (optionnelle) ==========
-if (document.getElementById('tab-infirmiers')) {
-    async function loadAdminInfirmiers() {
-        const infirmiers = await getInfirmiers();
-        const container = document.getElementById('adminInfirmiersList');
-        if (container) {
-            container.innerHTML = infirmiers.map(inf => `
-                <div class="infirmier-card">
-                    <h3>✅ ${inf.nom}</h3>
-                    <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
-                    <p>📍 ${inf.quartier} | ${inf.ville}</p>
-                    <p>🕒 ${inf.disponibilites}</p>
-                    <p>🩺 ${inf.services.join(', ')}</p>
-                </div>
-            `).join('');
-            if (infirmiers.length === 0) {
-                container.innerHTML = '<div class="aucun-resultat">Aucun infirmier validé</div>';
-            }
-        }
-    }
+    const btnRechercher = document.getElementById('btnRechercher');
+    if (btnRechercher) btnRechercher.onclick = rechercher;
     
-    function loadAdminInscriptions() {
-        const container = document.getElementById('adminInscriptionsList');
-        if (!container) return;
-        
-        const inscriptions = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-        
-        if (inscriptions.length === 0) {
-            container.innerHTML = '<div class="aucun-resultat">✅ Aucune inscription en attente</div>';
-            return;
-        }
-        
-        container.innerHTML = inscriptions.map((inf, index) => `
-            <div class="infirmier-card">
-                <h3>⏳ ${inf.nom}</h3>
-                <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
-                <p>📍 ${inf.quartier}</p>
-                <p>🩺 ${inf.services.join(', ')}</p>
-                <p>📅 ${new Date(inf.dateInscription).toLocaleDateString()}</p>
-                <button class="btn-small btn-primary" onclick="accepterInscription(${index})">✅ Accepter</button>
-                <button class="btn-small btn-danger" onclick="refuserInscription(${index})">❌ Refuser</button>
-            </div>
-        `).join('');
-    }
-    
-    window.accepterInscription = function(index) {
-        let inscriptions = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-        const infirmier = inscriptions[index];
-        
-        // Copier dans le presse-papier
-        const ligne = `${infirmier.id}\t${infirmier.nom}\t${infirmier.telephone}\t${infirmier.email}\t${infirmier.adresse}\t${infirmier.quartier}\t${infirmier.ville}\t${infirmier.rayon}\t${infirmier.services.join(', ')}\t${infirmier.tarifs}\t${infirmier.prixMin}\t${infirmier.prixMax}\t${infirmier.disponibilites}\t\t${infirmier.langues}\t${infirmier.experience}\t\t${infirmier.dateInscription}\tTRUE`;
-        
-        navigator.clipboard.writeText(ligne);
-        
-        inscriptions.splice(index, 1);
-        localStorage.setItem('inscriptions_temp', JSON.stringify(inscriptions));
-        
-        loadAdminInscriptions();
-        loadAdminInfirmiers();
-        showNotification('✅ Infirmier accepté ! Ligne copiée. Colle-la dans Google Sheet', 'success');
-    };
-    
-    window.refuserInscription = function(index) {
-        let inscriptions = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
-        const nom = inscriptions[index].nom;
-        inscriptions.splice(index, 1);
-        localStorage.setItem('inscriptions_temp', JSON.stringify(inscriptions));
-        loadAdminInscriptions();
-        showNotification(`❌ Inscription de ${nom} refusée`, 'warning');
-    };
-    
-    // Onglets
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-        btn.onclick = () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
-            const tabId = document.getElementById(`tab-${btn.dataset.tab}`);
-            if (tabId) tabId.classList.add('active');
-            if (btn.dataset.tab === 'infirmiers') loadAdminInfirmiers();
-            if (btn.dataset.tab === 'inscriptions') loadAdminInscriptions();
+    const btnReset = document.getElementById('btnReset');
+    if (btnReset) {
+        btnReset.onclick = () => {
+            const inputs = document.querySelectorAll('.filters-grid select, .filters-grid input');
+            inputs.forEach(el => { if (el) el.value = ''; });
+            rechercher();
+            showNotification('Filtres réinitialisés', 'info');
         };
-    });
+    }
     
-    loadAdminInfirmiers();
-    loadAdminInscriptions();
+    rechercher();
 }
 
 // ========== DÉMARRAGE ==========
