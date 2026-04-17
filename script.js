@@ -1,9 +1,13 @@
-// ========== LIEN GOOGLE SHEETS (LECTURE SEULEMENT) ==========
+// ========== LIEN GOOGLE SHEETS ==========
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1RAIjiJZPwHMNFjBillgBEnOK5nDXQT658V3vbBulamc/export?format=csv&gid=0';
 
-// ========== STOCKAGE LOCAL DES INSCRIPTIONS EN ATTENTE ==========
+// ========== STOCKAGE LOCAL ==========
 let inscriptionsEnAttente = [];
 let infirmiersData = [];
+
+// ========== NUMÉRO WHATSAPP ADMIN ==========
+// Ton numéro : 0755020097 → format international : 212755020097
+const ADMIN_WHATSAPP = '212755020097';
 
 // ========== NOTIFICATION ==========
 function showNotification(message, type = 'info', title = '') {
@@ -32,6 +36,33 @@ function getWhatsAppUrl(phone, message) {
     return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
 }
 
+// ========== ENVOI WHATSAPP À L'ADMIN ==========
+function envoyerWhatsAppAdmin(infirmier) {
+    // Construire le message formaté
+    const message = `📋 *NOUVELLE INSCRIPTION INFIRMIER* 📋%0A%0A` +
+                    `👤 *Nom:* ${infirmier.nom}%0A` +
+                    `📞 *Téléphone:* ${infirmier.telephone}%0A` +
+                    `📧 *Email:* ${infirmier.email}%0A` +
+                    `📍 *Adresse:* ${infirmier.adresse}%0A` +
+                    `🏘️ *Quartier:* ${infirmier.quartier}%0A` +
+                    `📍 *Ville:* ${infirmier.ville}%0A` +
+                    `📏 *Rayon:* ${infirmier.rayon} km%0A` +
+                    `🩺 *Services:* ${infirmier.services.join(', ')}%0A` +
+                    `💰 *Tarifs:* ${infirmier.tarifs}%0A` +
+                    `💶 *Prix min:* ${infirmier.prixMin} DH%0A` +
+                    `💶 *Prix max:* ${infirmier.prixMax} DH%0A` +
+                    `⏰ *Disponibilités:* ${infirmier.disponibilites}%0A` +
+                    `🗣️ *Langues:* ${infirmier.langues}%0A` +
+                    `🎓 *Expérience:* ${infirmier.experience} ans%0A` +
+                    `📅 *Date inscription:* ${new Date(infirmier.dateInscription).toLocaleString()}%0A%0A` +
+                    `➡️ *Pour valider, copie cette ligne dans Google Sheet :*%0A%0A` +
+                    `${infirmier.id}\t${infirmier.nom}\t${infirmier.telephone}\t${infirmier.email}\t${infirmier.adresse}\t${infirmier.quartier}\t${infirmier.ville}\t${infirmier.rayon}\t${infirmier.services.join(', ')}\t${infirmier.tarifs}\t${infirmier.prixMin}\t${infirmier.prixMax}\t${infirmier.disponibilites}\t\t${infirmier.langues}\t${infirmier.experience}\t\t${infirmier.dateInscription}\tFALSE`;
+    
+    // Créer le lien WhatsApp et ouvrir
+    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+}
+
 // ========== CHARGEMENT GOOGLE SHEETS (INFIRMIERS VALIDÉS) ==========
 async function loadInfirmiersFromSheet() {
     try {
@@ -49,27 +80,32 @@ async function loadInfirmiersFromSheet() {
             const clean = (str) => str ? str.replace(/^"|"$/g, '').trim() : '';
             const services = clean(values[8]) ? clean(values[8]).split(', ') : [];
             
-            infirmiers.push({
-                id: clean(values[0]),
-                nom: clean(values[1]),
-                telephone: clean(values[2]),
-                email: clean(values[3]),
-                adresse: clean(values[4]),
-                quartier: clean(values[5]),
-                ville: clean(values[6]) || 'Oujda',
-                rayon: parseInt(clean(values[7])) || 5,
-                services: services,
-                tarifs: clean(values[9]),
-                prixMin: parseInt(clean(values[10])) || 0,
-                prixMax: parseInt(clean(values[11])) || 200,
-                disponibilites: clean(values[12]) || 'Lundi-Vendredi 9h-17h',
-                diplomes: clean(values[13]),
-                langues: clean(values[14]) || 'Arabe, Français',
-                experience: parseInt(clean(values[15])) || 0,
-                photo: clean(values[16]),
-                dateInscription: clean(values[17]),
-                valide: true
-            });
+            // Ne garder que ceux avec valide = TRUE
+            const valide = clean(values[18]).toUpperCase() === 'TRUE';
+            
+            if (valide) {
+                infirmiers.push({
+                    id: clean(values[0]),
+                    nom: clean(values[1]),
+                    telephone: clean(values[2]),
+                    email: clean(values[3]),
+                    adresse: clean(values[4]),
+                    quartier: clean(values[5]),
+                    ville: clean(values[6]) || 'Oujda',
+                    rayon: parseInt(clean(values[7])) || 5,
+                    services: services,
+                    tarifs: clean(values[9]),
+                    prixMin: parseInt(clean(values[10])) || 0,
+                    prixMax: parseInt(clean(values[11])) || 200,
+                    disponibilites: clean(values[12]) || 'Lundi-Vendredi 9h-17h',
+                    diplomes: clean(values[13]),
+                    langues: clean(values[14]) || 'Arabe, Français',
+                    experience: parseInt(clean(values[15])) || 0,
+                    photo: clean(values[16]),
+                    dateInscription: clean(values[17]),
+                    valide: true
+                });
+            }
         }
         
         infirmiersData = infirmiers;
@@ -81,77 +117,7 @@ async function loadInfirmiersFromSheet() {
     }
 }
 
-// ========== GESTION DES INSCRIPTIONS (localStorage) ==========
-function chargerInscriptions() {
-    const saved = localStorage.getItem('inscriptions_en_attente');
-    if (saved) {
-        inscriptionsEnAttente = JSON.parse(saved);
-    } else {
-        inscriptionsEnAttente = [];
-    }
-    console.log('📋 Inscriptions en attente:', inscriptionsEnAttente.length);
-}
-
-function sauvegarderInscriptions() {
-    localStorage.setItem('inscriptions_en_attente', JSON.stringify(inscriptionsEnAttente));
-}
-
-async function ajouterInscription(infirmier) {
-    inscriptionsEnAttente.push(infirmier);
-    sauvegarderInscriptions();
-    console.log('➕ Nouvelle inscription:', infirmier.nom);
-}
-
-async function accepterInscription(index) {
-    const infirmier = inscriptionsEnAttente[index];
-    
-    // Créer le texte à copier dans Google Sheet
-    const nouvelleLigne = [
-        infirmier.id,
-        infirmier.nom,
-        infirmier.telephone,
-        infirmier.email,
-        infirmier.adresse,
-        infirmier.quartier,
-        infirmier.ville,
-        infirmier.rayon,
-        infirmier.services.join(', '),
-        infirmier.tarifs,
-        infirmier.prixMin,
-        infirmier.prixMax,
-        infirmier.disponibilites,
-        infirmier.diplomes,
-        infirmier.langues,
-        infirmier.experience,
-        infirmier.photo,
-        infirmier.dateInscription,
-        'TRUE'
-    ].join('\t'); // Tabulation pour coller facilement dans Google Sheet
-    
-    // Copier dans le presse-papier
-    await navigator.clipboard.writeText(nouvelleLigne);
-    
-    // Supprimer de la liste d'attente
-    inscriptionsEnAttente.splice(index, 1);
-    sauvegarderInscriptions();
-    
-    showNotification('✅ Infirmier accepté ! Donnée copiée. Colle-la dans ton Google Sheet (Ctrl+V)', 'success', '📋 Ajouté');
-    
-    // Recharger l'affichage admin
-    if (typeof loadAdminInfirmiers === 'function') loadAdminInfirmiers();
-    if (typeof loadAdminInscriptions === 'function') loadAdminInscriptions();
-}
-
-async function refuserInscription(index) {
-    const nom = inscriptionsEnAttente[index].nom;
-    inscriptionsEnAttente.splice(index, 1);
-    sauvegarderInscriptions();
-    showNotification(`❌ Inscription de ${nom} refusée et supprimée`, 'warning', 'Refusé');
-    
-    if (typeof loadAdminInscriptions === 'function') loadAdminInscriptions();
-}
-
-// ========== FONCTIONS POUR LE SITE PUBLIC ==========
+// ========== FONCTIONS POUR LE SITE ==========
 async function getInfirmiers() {
     if (infirmiersData.length === 0) await loadInfirmiersFromSheet();
     return infirmiersData;
@@ -172,7 +138,6 @@ async function getStats() {
 
 // ========== INIT ==========
 async function init() {
-    chargerInscriptions();
     await loadInfirmiersFromSheet();
     await updateStats();
     setupTheme();
@@ -237,9 +202,18 @@ if (document.getElementById('infirmierForm')) {
             valide: false
         };
         
-        await ajouterInscription(infirmier);
-        showNotification('✅ Votre inscription a été envoyée à l\'administrateur !', 'success', '📝 En attente');
-        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+        // Sauvegarder dans localStorage
+        let inscrits = JSON.parse(localStorage.getItem('inscriptions_temp') || '[]');
+        inscrits.push(infirmier);
+        localStorage.setItem('inscriptions_temp', JSON.stringify(inscrits));
+        
+        // Envoyer sur WhatsApp
+        envoyerWhatsAppAdmin(infirmier);
+        
+        showNotification('✅ Inscription envoyée ! Vous serez contacté sous 48h.', 'success', '📝 Demande envoyée');
+        
+        // Rediriger après 3 secondes
+        setTimeout(() => { window.location.href = 'index.html'; }, 3000);
     });
 }
 
@@ -270,7 +244,7 @@ if (document.getElementById('btnRechercher')) {
         }
         
         container.innerHTML = infirmiers.map(inf => {
-            const whatsappMsg = `Bonjour ${inf.nom}, je vous contacte depuis Infirmiers Oujda.`;
+            const whatsappMsg = `Bonjour ${inf.nom}, je vous contacte depuis Infirmiers Oujda. Je souhaite prendre rendez-vous.`;
             
             return `
                 <div class="infirmier-card">
@@ -281,6 +255,7 @@ if (document.getElementById('btnRechercher')) {
                     <p>💰 ${inf.prixMin} - ${inf.prixMax} DH</p>
                     <p>🕒 ${inf.disponibilites}</p>
                     <p>🗣️ ${inf.langues}</p>
+                    <p>🎓 ${inf.experience} ans d'expérience</p>
                     <p>🩺 ${inf.services.map(s => `<span class="service-badge">${s}</span>`).join('')}</p>
                     <div>
                         <a href="tel:${inf.telephone}" class="contact-btn">📞 Appeler</a>
@@ -297,87 +272,6 @@ if (document.getElementById('btnRechercher')) {
         rechercher();
     };
     rechercher();
-}
-
-// ========== PAGE ADMIN ==========
-if (document.getElementById('tab-infirmiers')) {
-    
-    // Afficher les infirmiers déjà validés (depuis Google Sheet)
-    window.loadAdminInfirmiers = async function() {
-        const infirmiers = await getInfirmiers();
-        const container = document.getElementById('adminInfirmiersList');
-        if (container) {
-            container.innerHTML = infirmiers.map(inf => `
-                <div class="infirmier-card">
-                    <h3>✅ ${inf.nom}</h3>
-                    <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
-                    <p>📍 ${inf.quartier} | ${inf.ville}</p>
-                    <p>🕒 ${inf.disponibilites}</p>
-                    <p>🩺 ${inf.services.join(', ')}</p>
-                </div>
-            `).join('');
-            if (infirmiers.length === 0) {
-                container.innerHTML = '<div class="aucun-resultat">Aucun infirmier validé pour le moment</div>';
-            }
-        }
-    };
-    
-    // Afficher les inscriptions en attente
-    window.loadAdminInscriptions = function() {
-        const container = document.getElementById('adminInscriptionsList');
-        if (!container) return;
-        
-        chargerInscriptions();
-        
-        if (inscriptionsEnAttente.length === 0) {
-            container.innerHTML = '<div class="aucun-resultat">✅ Aucune inscription en attente</div>';
-            return;
-        }
-        
-        container.innerHTML = inscriptionsEnAttente.map((inf, index) => `
-            <div class="infirmier-card">
-                <h3>⏳ ${inf.nom}</h3>
-                <p>📞 ${inf.telephone} | 📧 ${inf.email}</p>
-                <p>📍 ${inf.quartier} | ${inf.ville}</p>
-                <p>🕒 ${inf.disponibilites}</p>
-                <p>🩺 ${inf.services.join(', ')}</p>
-                <p>📅 Inscription: ${new Date(inf.dateInscription).toLocaleDateString()}</p>
-                <div style="margin-top: 15px;">
-                    <button class="btn-small btn-primary" onclick="accepterInscription(${index})">✅ Accepter</button>
-                    <button class="btn-small btn-danger" onclick="refuserInscription(${index})">❌ Refuser</button>
-                </div>
-            </div>
-        `).join('');
-    };
-    
-    // Exporter les données pour Google Sheet (optionnel)
-    window.exporterPourGoogleSheet = function() {
-        let texte = "id\tnom\ttelephone\temail\tadresse\tquartier\tville\trayon\tservices\ttarifs\tprixMin\tprixMax\tdisponibilites\tdiplomes\tlangues\texperience\tphoto\tdateInscription\tvalide\n";
-        
-        inscriptionsEnAttente.forEach(inf => {
-            texte += `${inf.id}\t${inf.nom}\t${inf.telephone}\t${inf.email}\t${inf.adresse}\t${inf.quartier}\t${inf.ville}\t${inf.rayon}\t${inf.services.join(', ')}\t${inf.tarifs}\t${inf.prixMin}\t${inf.prixMax}\t${inf.disponibilites}\t${inf.diplomes}\t${inf.langues}\t${inf.experience}\t${inf.photo}\t${inf.dateInscription}\tFALSE\n`;
-        });
-        
-        navigator.clipboard.writeText(texte);
-        showNotification('Données copiées ! Colle-les dans Google Sheet (Ctrl+V)', 'success', '📋 Export');
-    };
-    
-    // Onglets admin
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-        btn.onclick = () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
-            const tabId = document.getElementById(`tab-${btn.dataset.tab}`);
-            if (tabId) tabId.classList.add('active');
-            if (btn.dataset.tab === 'infirmiers') loadAdminInfirmiers();
-            if (btn.dataset.tab === 'inscriptions') loadAdminInscriptions();
-        };
-    });
-    
-    loadAdminInfirmiers();
-    loadAdminInscriptions();
 }
 
 // ========== DÉMARRAGE ==========
