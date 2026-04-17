@@ -9,40 +9,104 @@
 <body>
     <button id="themeToggle" class="theme-btn">🌙</button>
     
-    <div class="container">
-        <h1>🏥 Infirmiers à Domicile - Oujda</h1>
-        <p class="subtitle">Trouvez un infirmier près de chez vous ou inscrivez-vous</p>
-
-        <div class="stats-container" id="statsContainer">
-            <div class="stat-card">
-                <div class="stat-number" id="statInfirmiers">0</div>
-                <div class="stat-label">Infirmiers inscrits</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="statServices">0</div>
-                <div class="stat-label">Services différents</div>
-            </div>
-
-        <div class="choice-cards">
-            <div class="card">
-                <div class="card-icon">👨‍⚕️</div>
-                <h2>Je suis infirmier</h2>
-                <p>Cliquez ci-dessous pour recevoir le formulaire d'inscription</p>
+    <!-- Section Héro (grande image d'accueil) -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>🏥 Infirmiers à Domicile</h1>
+            <p class="hero-subtitle">Des soins de qualité à Oujda, à votre domicile, 7j/7</p>
+            <div class="hero-buttons">
                 <a href="https://wa.me/212755020097?text=Bonjour%2C%20je%20souhaite%20m%27inscrire%20comme%20infirmier%20sur%20votre%20plateforme.%20Voici%20le%20lien%20du%20formulaire%20%C3%A0%20remplir%20%3A%0A%0Ahttps%3A%2F%2Fdocs.google.com%2Fforms%2Fd%2Fe%2F1FAIpQLSeWGsNO0K7sWxrHEp2HF_uYlaKrSaus4W_skM9jJxkQFtStuw%2Fviewform" 
                    target="_blank" 
-                   class="btn btn-primary">
-                   📱 M'inscrire sur WhatsApp
+                   class="btn btn-whatsapp">
+                   📱 Je suis infirmier - M'inscrire
+                </a>
+                <a href="recherche.html" class="btn btn-primary">
+                   🔍 Je suis patient - Rechercher
                 </a>
             </div>
+        </div>
+    </section>
 
-            <div class="card">
-                <div class="card-icon">👤</div>
-                <h2>Je suis patient</h2>
-                <p>Recherchez un infirmier disponible près de chez vous</p>
-                <a href="recherche.html" class="btn btn-secondary">Rechercher</a>
+    <!-- Section Statistiques -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-container" id="statsContainer">
+                <div class="stat-card">
+                    <div class="stat-number" id="statInfirmiers">0</div>
+                    <div class="stat-label">Infirmiers inscrits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statServices">0</div>
+                    <div class="stat-label">Services différents</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statAvis">0</div>
+                    <div class="stat-label">Avis postés</div>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <!-- Section À propos -->
+    <section class="about">
+        <div class="container">
+            <h2>À propos de nous</h2>
+            <p>Notre plateforme met en relation les patients d'Oujda avec des infirmiers qualifiés et expérimentés. Nous intervenons 7j/7 pour le bien-être et le confort de vos proches. Tous nos infirmiers sont diplômés et vérifiés.</p>
+        </div>
+    </section>
+
+    <!-- Section Services (inspirée de LIKOUM) -->
+    <section class="services">
+        <div class="container">
+            <h2>Nos Services de Soins à Domicile</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">🩺</div>
+                    <h3>Soins d'hygiène et de confort</h3>
+                    <p>Toilette, habillage, change, prévention des escarres.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🍽️</div>
+                    <h3>Assistance quotidienne</h3>
+                    <p>Aide aux déplacements, transferts, accompagnement aux repas.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">💊</div>
+                    <h3>Soins médicaux de base</h3>
+                    <p>Prise de constantes, aide à la prise de médicaments, surveillance.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">❤️</div>
+                    <h3>Accompagnement moral</h3>
+                    <p>Présence rassurante, écoute, stimulation cognitive, lien social.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Pour qui ? -->
+    <section class="audience">
+        <div class="container">
+            <h2>Pour qui ?</h2>
+            <div class="audience-grid">
+                <div class="audience-item">👵 Personnes âgées en perte d'autonomie</div>
+                <div class="audience-item">🏥 Patients en convalescence</div>
+                <div class="audience-item">♿ Personnes en situation de handicap</div>
+                <div class="audience-item">🧠 Patients Alzheimer / Parkinson</div>
+                <div class="audience-item">🕊️ Soins palliatifs à domicile</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Contact -->
+    <section class="contact">
+        <div class="container">
+            <h2>Besoin d'un infirmier à domicile ?</h2>
+            <p>Contactez-nous dès maintenant pour une prise en charge rapide.</p>
+            <a href="recherche.html" class="btn btn-primary btn-large">🔍 Rechercher un infirmier</a>
+        </div>
+    </section>
 
     <div id="notification" class="notification"></div>
 
